@@ -1,0 +1,45 @@
+title: Comprehensive RAG System
+description: Documentation for a Retrieval-Augmented Generation (RAG) system for querying and extracting insights from your documents using LLMs
+baseurl: ""
+url: ""
+remote_theme: just-the-docs/just-the-docs
+
+# Just the Docs configuration
+color_scheme: dark
+search_enabled: true
+heading_anchors: true
+permalink: pretty
+aux_links:
+  "RAG System on GitHub":
+    - "https://github.com/nitin27may/rag"
+aux_links_new_tab: true
+
+# Footer configuration
+footer_content: "Copyright &copy; 2023-2025. Distributed under the MIT license."
+last_edit_timestamp: true
+last_edit_time_format: "%b %e %Y at %I:%M %p"
+
+# Back to top link
+back_to_top: true
+back_to_top_text: "Back to top"
+
+# Collections for organizing docs
+collections:
+  docs:
+    permalink: "/:collection/:path/"
+    output: true
+
+# Default settings
+defaults:
+  -
+    scope:
+      path: ""
+      type: docs
+    values:
+      layout: default
+
+# Exclude from processing
+exclude:
+  - Gemfile
+  - Gemfile.lock
+  - vendor

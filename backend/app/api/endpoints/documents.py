@@ -180,6 +180,12 @@ async def process_web_page(
         # Store in vector database - use 'web_pages' collection
         collection_name = "web_pages"
         
+        # IMPORTANT: Add document_id to each document's metadata before storing in vector database
+        for doc in parsed_documents:
+            if not doc.metadata:
+                doc.metadata = {}
+            doc.metadata["document_id"] = doc_id
+        
         vector_ids = vector_store.add_documents(
             documents=parsed_documents,
             collection_name=collection_name
