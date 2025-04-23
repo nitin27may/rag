@@ -1,0 +1,3 @@
+@echo off
+echo Starting RAG API server...
+python run.py

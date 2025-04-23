@@ -1,0 +1,63 @@
+# Web framework and API
+fastapi==0.103.1
+uvicorn==0.23.2
+python-multipart==0.0.6
+pydantic==2.11.1
+pydantic-settings==2.8.1
+httpx==0.25.0
+
+# Environment variables
+python-dotenv==1.0.0
+
+# Database
+sqlalchemy==2.0.21
+psycopg2-binary==2.9.7
+alembic==1.12.0
+
+# Object storage
+minio==7.1.17
+
+# LangChain and Vector Database
+langchain==0.0.312
+langchain-openai==0.0.2  # Make sure this is included for OpenAI embeddings
+langchain-community==0.0.11
+chromadb==0.4.18
+sentence-transformers==2.2.2  # Keep as fallback
+
+# Document processing
+unstructured==0.10.30
+pdf2image==1.16.3
+pytesseract==0.3.10
+pypdf==3.16.2
+pymupdf==1.23.3
+python-docx==0.8.11
+openpyxl==3.1.2
+pandas==2.1.1
+beautifulsoup4==4.12.2
+html2text==2020.1.16
+nltk==3.8.1
+
+# Image processing
+opencv-python-headless==4.8.1.78
+pillow==10.0.1
+transformers==4.33.2
+torch==2.0.1
+torchvision==0.15.2
+
+# Web scraping
+requests==2.31.0
+selenium==4.12.0
+webdriver-manager==4.0.0
+
+# Enhanced web scraping
+beautifulsoup4>=4.12.2
+html2text>=2020.1.16
+requests>=2.31.0
+
+# Utilities
+tqdm==4.66.1
+tenacity==8.2.3
+
+# WebSocket dependencies
+websockets>=11.0.3
+aiohttp>=3.8.5

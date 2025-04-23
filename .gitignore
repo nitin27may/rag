@@ -1,0 +1,18 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Backend specific
+/backend/.env
+/backend/.env.*
+!/backend/.env.example
+
+# Frontend specific
+/frontend/.env
+/frontend/.env.*
+!/frontend/.env.example
+
+# Storage data
+/storage/minio/*
+!/storage/minio/.gitkeep

@@ -1,0 +1,21 @@
+{
+  "name": "rag-system",
+  "version": "1.0.0",
+  "description": "Retrieval Augmented Generation system with separate frontend and backend",
+  "main": "index.js",
+  "scripts": {
+    "frontend:dev": "cd frontend && npm run dev",
+    "backend:dev": "cd backend && npm run dev",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "docker:build": "docker-compose build"
+  },
+  "keywords": [
+    "rag",
+    "next.js",
+    "docker"
+  ],
+  "author": "",
+  "license": "ISC"
+}
