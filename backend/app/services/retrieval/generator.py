@@ -164,6 +164,7 @@ class RAGGenerator:
         query: str,
         collection_names: List[str] = None,
         filter_criteria: Optional[Dict[str, Any]] = None,
+        document_id: Optional[str] = None,
         db: Optional[Session] = None
     ) -> Dict[str, Any]:
         """Generate a response using the RAG pipeline"""
@@ -187,6 +188,7 @@ class RAGGenerator:
                 query=query,
                 collection_names=collection_names,
                 filter_criteria=filter_criteria,
+                document_id=document_id,
                 top_k=settings.MAX_RETRIEVED_DOCUMENTS,
                 db=db
             )
@@ -240,7 +242,11 @@ class RAGGenerator:
                     log_entry = QueryLog(
                         query_text=query,
                         query_type="semantic",
-                        parameters={"collection_names": collection_names, "filter_criteria": filter_criteria},
+                        parameters={
+                            "collection_names": collection_names, 
+                            "filter_criteria": filter_criteria,
+                            "document_id": document_id
+                        },
                         document_ids=[doc.metadata.get("id", "") for doc in documents if hasattr(doc, 'metadata')],
                         retrieval_time_ms=retrieval_time * 1000,
                         generation_time_ms=generation_time * 1000,

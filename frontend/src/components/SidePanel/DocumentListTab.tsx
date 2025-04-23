@@ -9,6 +9,7 @@ export default function DocumentListTab() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   useEffect(() => {
     loadDocuments();
@@ -42,6 +43,12 @@ export default function DocumentListTab() {
       console.error('Error deleting document:', err);
       alert('Failed to delete document. Please try again.');
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    setTimeout(() => setCopiedId(null), 2000); // Reset copied state after 2 seconds
   };
 
   if (isLoading) {
@@ -91,6 +98,28 @@ export default function DocumentListTab() {
           <h3 className="font-medium text-gray-900 mb-1">
             {doc.title || doc.filename || 'Untitled Document'}
           </h3>
+          
+          {/* Document ID with Copy Button */}
+          <div className="flex items-center mb-1">
+            <span className="text-xs text-gray-500 mr-1">ID:</span>
+            <span className="text-xs text-gray-500 truncate max-w-[160px]">{doc.id}</span>
+            <button
+              onClick={() => copyToClipboard(doc.id)}
+              className="ml-1 text-blue-600 hover:text-blue-800"
+              title="Copy ID"
+            >
+              {copiedId === doc.id ? (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                </svg>
+              )}
+            </button>
+          </div>
           
           {doc.description && (
             <p className="text-sm text-gray-500 mb-2">

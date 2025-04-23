@@ -23,6 +23,7 @@ class RAGRetriever:
         query: str,
         collection_names: Optional[List[str]] = None,
         filter_criteria: Optional[Dict[str, Any]] = None,
+        document_id: Optional[str] = None,
         top_k: int = 5,
         db: Optional[Session] = None
     ) -> Dict[str, Any]:
@@ -33,6 +34,7 @@ class RAGRetriever:
             query: User query
             collection_names: Collections to search in
             filter_criteria: Optional filters
+            document_id: Optional specific document ID to filter by
             top_k: Number of documents to retrieve
             db: Database session
             
@@ -54,6 +56,13 @@ class RAGRetriever:
                     collection_names = settings.COLLECTIONS
                 
         logger.info(f"Searching in collections: {collection_names}")
+        
+        # If document_id is provided, add it to filter criteria
+        if document_id:
+            logger.info(f"Filtering by document ID: {document_id}")
+            if not filter_criteria:
+                filter_criteria = {}
+            filter_criteria["document_id"] = document_id
 
         # Store all retrieved documents
         all_documents = []

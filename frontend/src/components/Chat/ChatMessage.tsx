@@ -1,6 +1,7 @@
 import ReactMarkdown from 'react-markdown';
 import { ChatMessageProps } from '@/lib/types';
 import { getUniqueSources } from '@/lib/utils';
+import { DocumentTextIcon } from '@heroicons/react/24/outline';
 import type { Components } from 'react-markdown';
 import type { ReactNode, ClassAttributes, HTMLAttributes } from 'react';
 
@@ -116,6 +117,18 @@ export default function ChatMessage({ message }: ChatMessageProps) {
         }`}
       >
         <div className="p-4">
+          {/* Display document ID badge if present */}
+          {message.document_id && (
+            <div className={`mb-2 flex items-center ${
+              message.role === 'user' ? 'text-blue-200' : 'text-blue-700'
+            }`}>
+              <DocumentTextIcon className="h-4 w-4 mr-1" />
+              <span className="text-xs font-medium">
+                Document ID: {message.document_id}
+              </span>
+            </div>
+          )}
+          
           <ReactMarkdown components={components}>
             {message.content}
           </ReactMarkdown>

@@ -24,13 +24,14 @@ export default function Home() {
   } | null>(null);
 
   // Send a message to the RAG system
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, documentId?: string) => {
     // Add user message
     const userMessage: Message = {
       id: Date.now().toString(),
       content,
       role: 'user',
       timestamp: new Date(),
+      document_id: documentId,
     };
     
     setMessages((prev) => [...prev, userMessage]);
@@ -44,6 +45,11 @@ export default function Home() {
         top_k: 5,
       };
       
+      // Add document_id if provided
+      if (documentId) {
+        queryRequest.document_id = documentId;
+      }
+      
       // Send query to API
       const response = await api.generateAnswer(queryRequest);
       
@@ -53,6 +59,7 @@ export default function Home() {
         content: response.answer,
         role: 'assistant',
         timestamp: new Date(),
+        document_id: documentId,  // Store the document ID with the response
         documents: response.documents,
       };
       
