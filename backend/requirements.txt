@@ -18,9 +18,10 @@ alembic==1.12.0
 minio==7.1.17
 
 # LangChain and Vector Database
-langchain==0.0.312
-langchain-openai==0.0.2  # Make sure this is included for OpenAI embeddings
-langchain-community==0.0.11
+langchain-core==0.1.17
+langchain==0.1.4
+langchain-openai==0.0.5  # Make sure this is included for OpenAI embeddings
+langchain-community==0.0.14
 chromadb==0.4.18
 sentence-transformers==2.2.2  # Keep as fallback
 

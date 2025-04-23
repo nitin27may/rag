@@ -2,8 +2,17 @@
 
 import { DocumentListProps } from '@/lib/types';
 import { formatDate, formatFileSize, truncateText } from '@/lib/utils';
+import { useState } from 'react';
 
 export default function DocumentList({ documents, onDelete, isLoading }: DocumentListProps) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(text);
+    setTimeout(() => setCopiedId(null), 2000); // Reset copied state after 2 seconds
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-64 bg-white rounded-lg border p-6">
@@ -51,6 +60,27 @@ export default function DocumentList({ documents, onDelete, isLoading }: Documen
             <div className="flex justify-between">
               <div className="flex-1 pr-4">
                 <h3 className="text-lg font-medium text-gray-900 mb-1">{doc.title || doc.filename || 'Untitled'}</h3>
+                
+                {/* Document ID with Copy Button */}
+                <div className="flex items-center mb-2">
+                  <span className="text-sm text-gray-500 mr-2">ID: {doc.id}</span>
+                  <button
+                    onClick={() => copyToClipboard(doc.id)}
+                    className="text-blue-600 hover:text-blue-800 p-1"
+                    title="Copy ID"
+                  >
+                    {copiedId === doc.id ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                      </svg>
+                    )}
+                  </button>
+                </div>
                 
                 {doc.description && (
                   <p className="text-gray-500 text-sm mb-2">

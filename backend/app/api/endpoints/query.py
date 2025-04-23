@@ -29,6 +29,7 @@ async def retrieve_documents(
             query=request.query,
             collection_names=collection_names,
             filter_criteria=request.filter_criteria,
+            document_id=request.document_id,  # Pass document_id to retriever
             top_k=request.top_k or settings.MAX_RETRIEVED_DOCUMENTS,
             db=db
         )
@@ -72,6 +73,7 @@ async def generate_answer(
             query=request.query,
             collection_names=collection_names,
             filter_criteria=request.filter_criteria,
+            document_id=request.document_id,  # Pass document_id to generator
             db=db
         )
         
@@ -97,3 +99,19 @@ async def generate_answer(
             status_code=500,
             detail=f"Error generating answer: {str(e)}"
         )
+
+
+@router.post("/document/{document_id}/query", response_model=QueryResponse)
+async def query_specific_document(
+    document_id: str,
+    request: QueryRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    Query against a specific document by its ID
+    """
+    # Override any document_id in the request body with the one from the path
+    request.document_id = document_id
+    
+    # Reuse the existing generate endpoint logic
+    return await generate_answer(request, db)

@@ -78,6 +78,7 @@ class QueryRequest(BaseModel):
     query: str
     collection_names: Optional[List[str]] = None
     filter_criteria: Optional[Dict[str, Any]] = None
+    document_id: Optional[str] = None  # Added document_id for filtering by specific document
     top_k: Optional[int] = Field(5, ge=1, le=20)
 
 

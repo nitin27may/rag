@@ -40,6 +40,7 @@ export interface QueryRequest {
     query: string;
     collection_names?: string[];
     filter_criteria?: Record<string, unknown>;
+    document_id?: string;  // Added document_id field
     top_k?: number;
 }
 
@@ -97,6 +98,7 @@ export interface Message {
     content: string;
     role: 'user' | 'assistant';
     timestamp: Date;
+    document_id?: string;  // Added document_id to track which document was queried
     documents?: Array<{
         content: string;
         metadata: Record<string, unknown>;
@@ -104,7 +106,7 @@ export interface Message {
 }
 
 export interface ChatInputProps {
-    onSendMessage: (message: string) => void;
+    onSendMessage: (message: string, documentId?: string) => void;  // Updated to include documentId
     isDisabled?: boolean;
 }
 
@@ -115,7 +117,7 @@ export interface ChatMessageProps {
 export interface ChatWindowProps {
     messages: Message[];
     isLoading: boolean;
-    onSendMessage: (message: string) => void;
+    onSendMessage: (message: string, documentId?: string) => void;  // Updated to include documentId
 }
 
 export interface DocumentListProps {

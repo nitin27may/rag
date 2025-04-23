@@ -70,9 +70,10 @@ class Settings(BaseSettings):
     
     # Embedding Settings
     EMBEDDING_PROVIDER: Literal["openai", "azure"] = os.environ.get("EMBEDDING_PROVIDER", "openai")
-    EMBEDDING_MODEL: str = "text-embedding-3-small"  # Updated to latest OpenAI embedding model
+    # Updated to one of the officially supported models
+    EMBEDDING_MODEL: str = os.environ.get("EMBEDDING_MODEL", "")
     AZURE_EMBEDDING_DEPLOYMENT: str = os.environ.get("AZURE_EMBEDDING_DEPLOYMENT", "")
-    EMBEDDING_MODEL_DIMENSIONS: int = 3072  # Dimensions for text-embedding-3-large
+    EMBEDDING_MODEL_DIMENSIONS: int = int(os.environ.get("EMBEDDING_MODEL_DIMENSIONS", ""))
     EMBEDDING_MODEL_FALLBACK: str = "sentence-transformers/all-MiniLM-L6-v2"  # Fallback model
     
     # Document Processing

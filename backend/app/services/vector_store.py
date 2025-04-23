@@ -2,14 +2,20 @@ import logging
 from typing import Dict, List, Optional, Any, Union
 import os
 
+# Updated imports to ensure compatibility
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Only import HuggingFaceEmbeddings if needed
+# This avoids potential import conflicts
+def get_huggingface_embeddings():
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    return HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_FALLBACK)
 
 
 class VectorStore:
@@ -24,29 +30,51 @@ class VectorStore:
         if settings.EMBEDDING_PROVIDER == "azure":
             # Use Azure OpenAI embeddings if configured
             if all([settings.AZURE_OPENAI_API_KEY, settings.AZURE_OPENAI_ENDPOINT, settings.AZURE_EMBEDDING_DEPLOYMENT]):
-                logger.info(f"Using Azure OpenAI embeddings with deployment: {settings.AZURE_EMBEDDING_DEPLOYMENT}")
-                return AzureOpenAIEmbeddings(
-                    azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
-                    api_key=settings.AZURE_OPENAI_API_KEY,
-                    azure_deployment=settings.AZURE_EMBEDDING_DEPLOYMENT,
-                    api_version=settings.AZURE_OPENAI_API_VERSION
-                )
-            else:
-                logger.warning("Azure OpenAI embedding configuration incomplete. Falling back to alternatives.")
+                try:
+                    logger.info(f"Using Azure OpenAI embeddings with deployment: {settings.AZURE_EMBEDDING_DEPLOYMENT}")
+                    embeddings = AzureOpenAIEmbeddings(
+                        azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                        api_key=settings.AZURE_OPENAI_API_KEY,
+                        azure_deployment=settings.AZURE_EMBEDDING_DEPLOYMENT,
+                        api_version=settings.AZURE_OPENAI_API_VERSION,
+                        model=settings.AZURE_EMBEDDING_DEPLOYMENT,
+                    )
+                    # Test the embeddings with a simple string
+                    test_embed = embeddings.embed_query("Test embedding")
+                    logger.info(f"Azure OpenAI embeddings test successful. Vector dimensions: {len(test_embed)}")
+                    return embeddings
+                except Exception as e:
+                    # No fallback for Azure - raise the error
+                    logger.error(f"Error initializing Azure OpenAI embeddings: {str(e)}")
+                    raise RuntimeError(f"Failed to initialize Azure OpenAI embeddings: {str(e)}")
         
-        # Use OpenAI embeddings if API key is available
-        if settings.OPENAI_API_KEY:
-            logger.info(f"Using OpenAI embeddings with model: {settings.EMBEDDING_MODEL}")
-            return OpenAIEmbeddings(
-                openai_api_key=settings.OPENAI_API_KEY,
-                model=settings.EMBEDDING_MODEL
-            )
+        # Use OpenAI embeddings if provider is set to 'openai'
+        elif settings.EMBEDDING_PROVIDER == "openai":
+            if not settings.OPENAI_API_KEY:
+                raise ValueError("OPENAI_API_KEY is not configured in the environment but EMBEDDING_PROVIDER is set to 'openai'")
             
-        # Fallback to local HuggingFace embeddings if no API key is available
-        logger.info(f"Using local HuggingFace embeddings: {settings.EMBEDDING_MODEL_FALLBACK}")
-        return HuggingFaceEmbeddings(
-            model_name=settings.EMBEDDING_MODEL_FALLBACK
-        )
+            try:
+                logger.info(f"Using OpenAI embeddings with model: {settings.EMBEDDING_MODEL}")
+                embeddings = OpenAIEmbeddings(
+                    openai_api_key=settings.OPENAI_API_KEY,
+                    model=settings.EMBEDDING_MODEL,
+                )
+                # Test the embeddings
+                test_embed = embeddings.embed_query("Test embedding")
+                logger.info(f"OpenAI embeddings test successful. Vector dimensions: {len(test_embed)}")
+                return embeddings
+            except Exception as e:
+                logger.error(f"Error initializing OpenAI embeddings with model {settings.EMBEDDING_MODEL}: {str(e)}")
+                # Try fallback to HuggingFace embeddings
+                logger.warning(f"Falling back to HuggingFace embeddings: {settings.EMBEDDING_MODEL_FALLBACK}")
+                try:
+                    return get_huggingface_embeddings()
+                except Exception as hf_error:
+                    logger.error(f"Fallback to HuggingFace embeddings failed: {str(hf_error)}")
+                    raise RuntimeError(f"Failed to initialize any embedding model")
+        else:
+            # Unknown provider
+            raise ValueError(f"Unknown EMBEDDING_PROVIDER: {settings.EMBEDDING_PROVIDER}. Must be 'azure' or 'openai'.")
     
     def _get_chroma_client(self):
         """Get or create Chroma client with improved error handling"""
@@ -86,8 +114,8 @@ class VectorStore:
                             settings=ChromaSettings(
                                 allow_reset=True,
                                 anonymized_telemetry=False,
-                                tenant="default_tenant",  # Explicitly set tenant
-                                skip_tenant_validation=True  # Skip validation
+                                tenant="default_tenant",
+                                skip_tenant_validation=True
                             )
                         )
                     else:
