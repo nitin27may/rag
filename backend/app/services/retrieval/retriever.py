@@ -43,7 +43,17 @@ class RAGRetriever:
         
         # Set default collection names if not provided
         if not collection_names:
-            collection_names = settings.COLLECTIONS
+            # Default to using only the documents collection
+            if isinstance(settings.COLLECTIONS, dict) and "documents" in settings.COLLECTIONS:
+                collection_names = [settings.COLLECTIONS["documents"]]
+            else:
+                # Get collection names from settings (handling both list and dict formats)
+                if isinstance(settings.COLLECTIONS, dict):
+                    collection_names = list(settings.COLLECTIONS.values())
+                else:
+                    collection_names = settings.COLLECTIONS
+                
+        logger.info(f"Searching in collections: {collection_names}")
 
         # Store all retrieved documents
         all_documents = []
@@ -53,6 +63,7 @@ class RAGRetriever:
         for collection_name in collection_names:
             try:
                 # Get documents with scores
+                logger.info(f"Searching collection '{collection_name}' for query: '{query}'")
                 docs_with_scores = vector_store.search_with_score(
                     query=query,
                     collection_name=collection_name,
@@ -65,12 +76,28 @@ class RAGRetriever:
                     for doc, score in docs_with_scores:
                         all_documents.append(doc)
                         all_scores.append(score)
+                        logger.debug(f"Found document with score {score}: {doc.page_content[:50]}...")
+                    logger.info(f"Found {len(docs_with_scores)} documents in collection '{collection_name}'")
+                else:
+                    logger.info(f"No documents found in collection '{collection_name}'")
             
             except Exception as e:
                 logger.error(f"Error searching collection {collection_name}: {str(e)}")
+                import traceback
+                logger.error(f"Search error traceback: {traceback.format_exc()}")
         
-        # Filter out irrelevant documents
-        relevant_docs, filtered_docs = self._filter_relevant_documents(query, all_documents, all_scores)
+        # Skip filtering entirely - just return all found documents
+        # This ensures we'll always have documents to work with
+        relevant_docs = all_documents
+        filtered_docs = 0
+        
+        # If we have too many documents, take only the top ones based on vector similarity
+        if len(relevant_docs) > settings.MAX_RETRIEVED_DOCUMENTS:
+            # Sort by vector similarity score (lower is better in most embeddings)
+            paired_docs = sorted(zip(relevant_docs, all_scores), key=lambda pair: pair[1])
+            # Take only the top MAX_RETRIEVED_DOCUMENTS
+            relevant_docs = [doc for doc, _ in paired_docs[:settings.MAX_RETRIEVED_DOCUMENTS]]
+            filtered_docs = len(all_documents) - len(relevant_docs)
         
         # Generate context from relevant documents
         context = self._generate_context(relevant_docs)
@@ -81,7 +108,11 @@ class RAGRetriever:
         
         # If documents were filtered, log the info
         if filtered_docs > 0:
-            logger.info(f"Filtered out {filtered_docs} documents deemed irrelevant to the query")
+            logger.info(f"Limited to top {len(relevant_docs)} documents out of {len(all_documents)}")
+            
+        # If no documents were found, log a warning
+        if len(relevant_docs) == 0:
+            logger.warning(f"No documents found for query: '{query}'")
         
         return {
             "documents": relevant_docs,
@@ -108,53 +139,9 @@ class RAGRetriever:
         if not documents:
             return [], 0
             
-        # 1. Extract key terms from the query
-        query_terms = set(self._extract_key_terms(query.lower()))
-        if not query_terms:
-            return documents, 0
-        
-        # 2. Define relevance threshold
-        score_threshold = 0.5  # Higher value = more strict filtering
-        
-        # 3. Process each document
-        relevant_docs = []
-        filtered_count = 0
-        
-        for doc, score in zip(documents, scores):
-            # Convert the score to a relevance score (higher is better)
-            # This depends on the vector store's scoring system
-            relevance_score = 1.0 - score  # For some stores like ChromaDB, lower score = more similar
-            
-            # Extract document content
-            content = doc.page_content.lower()
-            
-            # Check for query terms in the content
-            term_matches = sum(1 for term in query_terms if term in content)
-            term_match_ratio = term_matches / len(query_terms) if query_terms else 0
-            
-            # Combined relevance score (adjust weights as needed)
-            combined_score = (0.7 * relevance_score) + (0.3 * term_match_ratio)
-            
-            # Add document metadata about relevance for debugging
-            doc.metadata["relevance_score"] = float(f"{combined_score:.4f}")
-            doc.metadata["vector_similarity"] = float(f"{relevance_score:.4f}")
-            doc.metadata["term_match_ratio"] = float(f"{term_match_ratio:.4f}")
-            
-            # Filter based on combined score
-            if combined_score >= score_threshold:
-                relevant_docs.append(doc)
-            else:
-                filtered_count += 1
-        
-        # Sort by relevance score (highest first)
-        relevant_docs = sorted(
-            relevant_docs, 
-            key=lambda x: x.metadata.get("relevance_score", 0), 
-            reverse=True
-        )
-        
-        # Limit to top_k
-        return relevant_docs[:settings.MAX_RETRIEVED_DOCUMENTS], filtered_count
+        # Simply return all documents - no filtering
+        # We're disabling filtering to ensure results are returned
+        return documents, 0
     
     def _extract_key_terms(self, text: str) -> List[str]:
         """Extract key terms from text, filtering out common words"""

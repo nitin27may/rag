@@ -24,29 +24,48 @@ class VectorStore:
         if settings.EMBEDDING_PROVIDER == "azure":
             # Use Azure OpenAI embeddings if configured
             if all([settings.AZURE_OPENAI_API_KEY, settings.AZURE_OPENAI_ENDPOINT, settings.AZURE_EMBEDDING_DEPLOYMENT]):
-                logger.info(f"Using Azure OpenAI embeddings with deployment: {settings.AZURE_EMBEDDING_DEPLOYMENT}")
-                return AzureOpenAIEmbeddings(
-                    azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
-                    api_key=settings.AZURE_OPENAI_API_KEY,
-                    azure_deployment=settings.AZURE_EMBEDDING_DEPLOYMENT,
-                    api_version=settings.AZURE_OPENAI_API_VERSION
-                )
-            else:
-                logger.warning("Azure OpenAI embedding configuration incomplete. Falling back to alternatives.")
+                try:
+                    logger.info(f"Using Azure OpenAI embeddings with deployment: {settings.AZURE_EMBEDDING_DEPLOYMENT}")
+                    embeddings = AzureOpenAIEmbeddings(
+                        azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+                        api_key=settings.AZURE_OPENAI_API_KEY,
+                        azure_deployment=settings.AZURE_EMBEDDING_DEPLOYMENT,
+                        api_version=settings.AZURE_OPENAI_API_VERSION,
+                        model=settings.AZURE_EMBEDDING_DEPLOYMENT,
+                        tiktoken_model_name="cl100k_base"
+                    )
+                    # Test the embeddings with a simple string
+                    test_embed = embeddings.embed_query("Test embedding")
+                    logger.info(f"Azure OpenAI embeddings test successful. Vector dimensions: {len(test_embed)}")
+                    return embeddings
+                except Exception as e:
+                    # No fallback for Azure - raise the error
+                    logger.error(f"Error initializing Azure OpenAI embeddings: {str(e)}")
+                    raise RuntimeError(f"Failed to initialize Azure OpenAI embeddings: {str(e)}")
         
-        # Use OpenAI embeddings if API key is available
-        if settings.OPENAI_API_KEY:
-            logger.info(f"Using OpenAI embeddings with model: {settings.EMBEDDING_MODEL}")
-            return OpenAIEmbeddings(
-                openai_api_key=settings.OPENAI_API_KEY,
-                model=settings.EMBEDDING_MODEL
-            )
+        # Use OpenAI embeddings if provider is set to 'openai'
+        elif settings.EMBEDDING_PROVIDER == "openai":
+            if not settings.OPENAI_API_KEY:
+                raise ValueError("OPENAI_API_KEY is not configured in the environment but EMBEDDING_PROVIDER is set to 'openai'")
             
-        # Fallback to local HuggingFace embeddings if no API key is available
-        logger.info(f"Using local HuggingFace embeddings: {settings.EMBEDDING_MODEL_FALLBACK}")
-        return HuggingFaceEmbeddings(
-            model_name=settings.EMBEDDING_MODEL_FALLBACK
-        )
+            try:
+                logger.info(f"Using OpenAI embeddings with model: {settings.EMBEDDING_MODEL}")
+                embeddings = OpenAIEmbeddings(
+                    openai_api_key=settings.OPENAI_API_KEY,
+                    model=settings.EMBEDDING_MODEL,
+                    tiktoken_model_name="cl100k_base"
+                )
+                # Test the embeddings
+                test_embed = embeddings.embed_query("Test embedding")
+                logger.info(f"OpenAI embeddings test successful. Vector dimensions: {len(test_embed)}")
+                return embeddings
+            except Exception as e:
+                # No fallback for OpenAI - raise the error
+                logger.error(f"Error initializing OpenAI embeddings with model {settings.EMBEDDING_MODEL}: {str(e)}")
+                raise RuntimeError(f"Failed to initialize OpenAI embeddings with model {settings.EMBEDDING_MODEL}: {str(e)}")
+        else:
+            # Unknown provider
+            raise ValueError(f"Unknown EMBEDDING_PROVIDER: {settings.EMBEDDING_PROVIDER}. Must be 'azure' or 'openai'.")
     
     def _get_chroma_client(self):
         """Get or create Chroma client with improved error handling"""
@@ -86,8 +105,8 @@ class VectorStore:
                             settings=ChromaSettings(
                                 allow_reset=True,
                                 anonymized_telemetry=False,
-                                tenant="default_tenant",  # Explicitly set tenant
-                                skip_tenant_validation=True  # Skip validation
+                                tenant="default_tenant",
+                                skip_tenant_validation=True
                             )
                         )
                     else:
