@@ -2,14 +2,20 @@ import logging
 from typing import Dict, List, Optional, Any, Union
 import os
 
+# Updated imports to ensure compatibility
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings, AzureOpenAIEmbeddings
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain.schema import Document
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Only import HuggingFaceEmbeddings if needed
+# This avoids potential import conflicts
+def get_huggingface_embeddings():
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+    return HuggingFaceEmbeddings(model_name=settings.EMBEDDING_MODEL_FALLBACK)
 
 
 class VectorStore:
@@ -32,7 +38,6 @@ class VectorStore:
                         azure_deployment=settings.AZURE_EMBEDDING_DEPLOYMENT,
                         api_version=settings.AZURE_OPENAI_API_VERSION,
                         model=settings.AZURE_EMBEDDING_DEPLOYMENT,
-                        tiktoken_model_name="cl100k_base"
                     )
                     # Test the embeddings with a simple string
                     test_embed = embeddings.embed_query("Test embedding")
@@ -53,16 +58,20 @@ class VectorStore:
                 embeddings = OpenAIEmbeddings(
                     openai_api_key=settings.OPENAI_API_KEY,
                     model=settings.EMBEDDING_MODEL,
-                    tiktoken_model_name="cl100k_base"
                 )
                 # Test the embeddings
                 test_embed = embeddings.embed_query("Test embedding")
                 logger.info(f"OpenAI embeddings test successful. Vector dimensions: {len(test_embed)}")
                 return embeddings
             except Exception as e:
-                # No fallback for OpenAI - raise the error
                 logger.error(f"Error initializing OpenAI embeddings with model {settings.EMBEDDING_MODEL}: {str(e)}")
-                raise RuntimeError(f"Failed to initialize OpenAI embeddings with model {settings.EMBEDDING_MODEL}: {str(e)}")
+                # Try fallback to HuggingFace embeddings
+                logger.warning(f"Falling back to HuggingFace embeddings: {settings.EMBEDDING_MODEL_FALLBACK}")
+                try:
+                    return get_huggingface_embeddings()
+                except Exception as hf_error:
+                    logger.error(f"Fallback to HuggingFace embeddings failed: {str(hf_error)}")
+                    raise RuntimeError(f"Failed to initialize any embedding model")
         else:
             # Unknown provider
             raise ValueError(f"Unknown EMBEDDING_PROVIDER: {settings.EMBEDDING_PROVIDER}. Must be 'azure' or 'openai'.")
