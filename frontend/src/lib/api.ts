@@ -41,7 +41,20 @@ class Api {
   // Chat & Query
 
   async generateAnswer(data: QueryRequest): Promise<QueryResponse> {
-    const response = await this.client.post<QueryResponse>('/query/generate', data);
+    let response;
+    if (data.document_id) {
+      // Use the specific document endpoint when document_id is provided
+      const documentId = data.document_id;
+      
+      // Create a copy of the data without document_id for the request body
+      // since the endpoint already has the document ID in the URL
+      const { document_id, ...requestData } = data;
+      
+      response = await this.client.post<QueryResponse>(`/query/document/${documentId}/query`, requestData);
+    } else {
+      // Use the general query endpoint when no document_id is provided
+      response = await this.client.post<QueryResponse>('/query/generate', data);
+    }
     return response.data;
   }
 

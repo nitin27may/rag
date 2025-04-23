@@ -233,6 +233,7 @@ class RAGRetriever:
         query: str,
         collection_names: Optional[List[str]] = None,
         filter_criteria: Optional[Dict[str, Any]] = None,
+        document_id: Optional[str] = None,  # Added document_id parameter
         top_k: int = 5,
         db: Optional[Session] = None
     ) -> Dict[str, Any]:
@@ -243,6 +244,7 @@ class RAGRetriever:
             query: User query
             collection_names: Collections to search in
             filter_criteria: Optional filters
+            document_id: Optional specific document ID to filter by
             top_k: Number of documents to retrieve
             db: Database session
             
@@ -251,7 +253,7 @@ class RAGRetriever:
         """
         # For now, we just use the vector search
         # In a more advanced implementation, this would combine vector search with keyword-based retrieval
-        return self.retrieve_for_rag(query, collection_names, filter_criteria, top_k, db)
+        return self.retrieve_for_rag(query, collection_names, filter_criteria, document_id, top_k, db)
 
 
 # Singleton instance

@@ -137,6 +137,12 @@ class DocumentProcessor:
             if mime_type.startswith("image/"):
                 collection_name = "images"
             
+            # IMPORTANT: Add document_id to each document's metadata before storing in vector database
+            for doc in parsed_documents:
+                if not doc.metadata:
+                    doc.metadata = {}
+                doc.metadata["document_id"] = doc_id
+            
             # Store in vector database
             vector_ids = vector_store.add_documents(
                 documents=parsed_documents,
