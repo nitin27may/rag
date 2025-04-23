@@ -50,10 +50,9 @@ gh_edit_view_mode: "tree"
 
 # Enable navigation structure
 nav_external_links:
-  - title: MEAN Stack Contacts on GitHub
+  - title: RAG System on GitHub
     url: https://github.com/nitin27may/rag
     hide_icon: false
-
 # Back to top link
 back_to_top: true
 back_to_top_text: "Back to top"
