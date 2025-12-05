@@ -65,10 +65,7 @@ cd backend
 curl -LsSf https://astral.sh/uv/install.sh | sh  # macOS/Linux
 # or: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"  # Windows
 
-# Setup environment and install dependencies
-./setup-env.sh          # macOS/Linux
 # or: setup-env.bat     # Windows
-
 # Configure environment
 cp .env.example .env
 # Edit .env with your Azure OpenAI or OpenAI credentials 
