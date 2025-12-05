@@ -1,0 +1,125 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=${APP_ENV:-development}
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://localhost:8080}
+      - BACKEND_URL=http://backend:8080
+    depends_on:
+      - backend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - PYTHONPATH=/app
+      - DATABASE_URL=postgresql://${DATABASE_USER:-raguser}:${DATABASE_PASSWORD:-ragpassword}@db:5432/${DATABASE_NAME:-ragdb}
+      # LLM Provider Configuration
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      # OpenAI Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      # Azure OpenAI Configuration
+      - AZURE_OPENAI_API_KEY=${AZURE_OPENAI_API_KEY}
+      - AZURE_OPENAI_ENDPOINT=${AZURE_OPENAI_ENDPOINT}
+      - AZURE_OPENAI_DEPLOYMENT=${AZURE_OPENAI_DEPLOYMENT}
+      - AZURE_OPENAI_API_VERSION=${AZURE_OPENAI_API_VERSION:-2024-08-06}
+      # Embedding Configuration
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-openai}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-text-embedding-3-large}
+      - EMBEDDING_MODEL_DIMENSIONS=${EMBEDDING_MODEL_DIMENSIONS:-3072}
+      - AZURE_EMBEDDING_DEPLOYMENT=${AZURE_EMBEDDING_DEPLOYMENT}
+      # SSL Configuration
+      - DISABLE_SSL_VERIFICATION=${DISABLE_SSL_VERIFICATION:-false}
+      # Other Configuration
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - MINIO_URL=minio:9000
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY:-ragadmin2024}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY:-ragadminsecret2024}
+      - MINIO_SECURE=False
+      - SECRET_KEY=${SECRET_KEY:-change-this-secret-key-in-production}
+    volumes:
+      - ./backend:/app
+      - ./backend/data:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+
+  db:
+    image: pgvector/pgvector:pg17
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${DATABASE_USER:-raguser}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD:-ragpassword}
+      - POSTGRES_DB=${DATABASE_NAME:-ragdb}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backend/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-raguser} -d ${DATABASE_NAME:-ragdb}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+
+  minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY:-ragadmin2024}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY:-ragadminsecret2024}
+    volumes:
+      - ./storage/minio:/data  # Map local folder to MinIO data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/ready"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
