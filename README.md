@@ -71,7 +71,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh  # macOS/Linux
 
 # Configure environment
 cp .env.example .env
-# Edit .env with your Azure OpenAI or OpenAI credentials
+# Edit .env with your Azure OpenAI or OpenAI credentials 
 
 # Run the server
 uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8080
