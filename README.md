@@ -66,7 +66,7 @@ graph TB
     
     subgraph "External Services"
         Q[<span style='color:#06B6D4'>Azure OpenAI /<br/>OpenAI GPT-4</span>]
-        R[<span style='color:#06B6D4'>Embedding Model<br/>text-embedding-3</span>]
+        R[<span style='color:#06B6D4'>Embedding Model<br/>text-embedding-3-large</span>]
     end
     
     subgraph "Data Layer"
@@ -197,10 +197,10 @@ docker compose ps
 ```
 
 You should see all services with status "Up" (healthy):
-- `rag-system-frontend-1`
-- `rag-system-backend-1`
-- `rag-system-db-1`
-- `rag-system-minio-1`
+- `frontend-1` (or `rag-frontend-1` depending on directory name)
+- `backend-1`
+- `db-1`
+- `minio-1`
 
 ### Step 4: Access the Application
 
@@ -214,8 +214,10 @@ Once all containers are healthy (may take 1-2 minutes):
 | **MinIO Console** | http://localhost:9001 | Object storage admin interface |
 
 **MinIO Login Credentials:** (from .env)
-- Username: `minioadmin` (or value of `MINIO_ACCESS_KEY`)
-- Password: `minioadmin` (or value of `MINIO_SECRET_KEY`)
+- Username: Value of `MINIO_ACCESS_KEY` (default: `minioadmin` from .env.example)
+- Password: Value of `MINIO_SECRET_KEY` (default: `minioadmin` from .env.example)
+
+**Note:** If you don't set these in `.env`, Docker Compose will use fallback defaults: `ragadmin2024` / `ragadminsecret2024`
 
 ### Step 5: Verify Installation
 
@@ -363,10 +365,10 @@ nano .env
 # Database (matches docker-compose)
 DATABASE_URL=postgresql://raguser:ragpassword@localhost:5432/ragdb
 
-# MinIO (matches docker-compose)
+# MinIO (when using docker compose up -d db minio)
 MINIO_URL=localhost:9000
-MINIO_ACCESS_KEY=ragadmin2024
-MINIO_SECRET_KEY=ragadminsecret2024
+MINIO_ACCESS_KEY=minioadmin        # Use value from .env or docker-compose defaults
+MINIO_SECRET_KEY=minioadmin        # Use value from .env or docker-compose defaults
 MINIO_SECURE=False
 
 # LLM Provider (OpenAI or Azure)
@@ -700,8 +702,8 @@ DATABASE_URL=postgresql://raguser:ragpassword@localhost:5432/ragdb
 
 ```env
 MINIO_URL=localhost:9000          # or minio:9000 in Docker
-MINIO_ACCESS_KEY=ragadmin2024
-MINIO_SECRET_KEY=ragadminsecret2024
+MINIO_ACCESS_KEY=minioadmin       # Should match .env.example
+MINIO_SECRET_KEY=minioadmin       # Should match .env.example
 MINIO_SECURE=False                # True for HTTPS, False for HTTP
 ```
 
